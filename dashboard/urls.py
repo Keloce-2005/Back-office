@@ -1,70 +1,46 @@
-# dashboard/urls.py
-from django.urls import path
+from django.urls import path, include
 from . import views
 
-app_name = 'dashboard'  # Namespace pour éviter les conflits de noms d'URL
+app_name = 'dashboard'
 
 urlpatterns = [
-    # Page d'accueil du dashboard
     path('', views.home, name='home'),
-    
-    # Gestion des livreurs
     path('livreurs/', views.livreurs, name='livreurs'),
-    path('livreurs/<int:livreur_id>/', views.livreur_detail, name='livreur_detail'),
-    
-    # Gestion des commerçants
+    path('livreur/<int:livreur_id>/', views.livreur_detail, name='livreur_detail'),
     path('commercants/', views.commercants, name='commercants'),
-    path('commercants/<int:commercant_id>/', views.commercant_detail, name='commercant_detail'),
-    
-    # Gestion des clients
+    path('commercant/<int:commercant_id>/', views.commercant_detail, name='commercant_detail'),
     path('clients/', views.clients, name='clients'),
-    path('clients/<int:client_id>/', views.client_detail, name='client_detail'),
-    
-    # Gestion des prestataires
+    path('client/<int:client_id>/', views.client_detail, name='client_detail'),
     path('prestataires/', views.prestataires, name='prestataires'),
-    path('prestataires/<int:prestataire_id>/', views.prestataire_detail, name='prestataire_detail'),
-    
-    # Gestion des annonces
+    path('prestataire/<int:prestataire_id>/', views.prestataire_detail, name='prestataire_detail'),
     path('annonces/', views.annonces, name='annonces'),
-    path('annonces/<int:annonce_id>/', views.annonce_detail, name='annonce_detail'),
-    
-    # Gestion des services
+    path('annonce/<int:annonce_id>/', views.annonce_detail, name='annonce_detail'),
     path('services/', views.services, name='services'),
-    path('services/<int:service_id>/', views.service_detail, name='service_detail'),
-    
-    # Gestion des entrepôts
+    path('service/<int:service_id>/', views.service_detail, name='service_detail'),
     path('entrepots/', views.entrepots, name='entrepots'),
-    path('entrepots/<int:entrepot_id>/', views.entrepot_detail, name='entrepot_detail'),
-    
-    # Gestion des livraisons
+    path('entrepot/<int:entrepot_id>/', views.entrepot_detail, name='entrepot_detail'),
     path('livraisons/', views.livraisons, name='livraisons'),
-    path('livraisons/<int:livraison_id>/', views.livraison_detail, name='livraison_detail'),
-    
-    # Gestion des notifications
+    path('livraison/<int:livraison_id>/', views.livraison_detail, name='livraison_detail'),
     path('notifications/', views.notifications, name='notifications'),
-    
-    # Gestion des paiements
     path('paiements/', views.paiements, name='paiements'),
-    path('paiements/<int:paiement_id>/', views.paiement_detail, name='paiement_detail'),
-    
-    # Gestion de la facturation
+    path('paiement/<int:paiement_id>/', views.paiement_detail, name='paiement_detail'),
     path('facturation/', views.facturation, name='facturation'),
-    
-    # Gestion des abonnements
     path('abonnements/', views.abonnements, name='abonnements'),
-    
-    # Gestion des contrats
     path('contrats/', views.contrats, name='contrats'),
-    
-    # Statistiques et rapports
     path('statistiques/', views.statistiques, name='statistiques'),
-    
-    # Paramètres du système
     path('parametres/', views.parametres, name='parametres'),
-    
-    # Support et aide
     path('support/', views.support, name='support'),
-    
-    # Logs du système
     path('logs/', views.logs, name='logs'),
+    path('validation/livreurs/', views.validation_livreurs, name='validation_livreurs'),
+    path('validation/livreur/<int:demande_id>/', views.validation_livreur_detail, name='validation_livreur_detail'),
+    path('validation/soumettre/', views.soumettre_pieces_justificatives, name='soumettre_pieces_justificatives'),
+    path('validation/changer-statut/', views.changer_statut_livreur, name='changer_statut_livreur'),
+    path('validation/refuser/', views.refuser_livreur, name='refuser_livreur'),
+    path('validation/document/valider/<int:document_id>/', views.valider_document, name='valider_document'),
+    path('validation/document/rejeter/<int:document_id>/', views.rejeter_document, name='rejeter_document'),
+    path('profil/', views.profil, name='profile'),
+    path('parametres/compte/', views.parametres, name='settings'),
+    path('parametres/generaux/', views.parametres_generaux, name='parametres_generaux'),
+    path('parametres/tarifaires/', views.parametres_tarifaires, name='parametres_tarifaires'),
+    path('utilisateurs-admin/', views.utilisateurs_admin, name='utilisateurs_admin'),
 ]

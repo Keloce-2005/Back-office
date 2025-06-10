@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}Paramètres tarifaires - EcoDeli{% endblock %}
+
+{% block content %}
+<div class="page-title">
+    <h1>Paramètres tarifaires</h1>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        Tarifs des abonnements
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            
+            <h5>Abonnement Free</h5>
+            <div class="mb-3">
+                <label for="free_price" class="form-label">Prix mensuel (€)</label>
+                <input type="number" class="form-control" id="free_price" name="free_price" value="0" readonly>
+                <small class="text-muted">L'abonnement Free est toujours gratuit</small>
+            </div>
+            
+            <h5 class="mt-4">Abonnement Starter</h5>
+            <div class="mb-3">
+                <label for="starter_price" class="form-label">Prix mensuel (€)</label>
+                <input type="number" step="0.01" class="form-control" id="starter_price" name="starter_price" value="9.90">
+            </div>
+            <div class="mb-3">
+                <label for="starter_discount" class="form-label">Réduction sur envoi (%)</label>
+                <input type="number" step="0.1" class="form-control" id="starter_discount" name="starter_discount" value="5">
+            </div>
+            
+            <h5 class="mt-4">Abonnement Premium</h5>
+            <div class="mb-3">
+                <label for="premium_price" class="form-label">Prix mensuel (€)</label>
+                <input type="number" step="0.01" class="form-control" id="premium_price" name="premium_price" value="19.99">
+            </div>
+            <div class="mb-3">
+                <label for="premium_discount" class="form-label">Réduction sur envoi (%)</label>
+                <input type="number" step="0.1" class="form-control" id="premium_discount" name="premium_discount" value="9">
+            </div>
+            <div class="mb-3">
+                <label for="premium_free_deliveries" class="form-label">Nombre d'envois prioritaires gratuits</label>
+                <input type="number" class="form-control" id="premium_free_deliveries" name="premium_free_deliveries" value="3">
+            </div>
+            
+            <hr class="my-4">
+            
+            <h5>Tarifs des livraisons</h5>
+            
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label for="base_price_small" class="form-label">Prix de base - Petit colis (€)</label>
+                    <input type="number" step="0.01" class="form-control" id="base_price_small" name="base_price_small" value="5.99">
+                </div>
+                <div class="col-md-4">
+                    <label for="base_price_medium" class="form-label">Prix de base - Colis moyen (€)</label>
+                    <input type="number" step="0.01" class="form-control" id="base_price_medium" name="base_price_medium" value="9.99">
+                </div>
+                <div class="col-md-4">
+                    <label for="base_price_large" class="form-label">Prix de base - Grand colis (€)</label>
+                    <input type="number" step="0.01" class="form-control" id="base_price_large" name="base_price_large" value="14.99">
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="price_per_km" class="form-label">Prix par km supplémentaire (€)</label>
+                    <input type="number" step="0.01" class="form-control" id="price_per_km" name="price_per_km" value="0.50">
+                </div>
+                <div class="col-md-6">
+                    <label for="urgent_fee" class="form-label">Supplément livraison urgente (%)</label>
+                    <input type="number" step="0.1" class="form-control" id="urgent_fee" name="urgent_fee" value="15">
+                </div>
+            </div>
+            
+            <hr class="my-4">
+            
+            <h5>Commissions</h5>
+            
+            <div class="mb-3">
+                <label for="delivery_commission" class="form-label">Commission sur livraisons (%)</label>
+                <input type="number" step="0.1" class="form-control" id="delivery_commission" name="delivery_commission" value="10">
+                <small class="text-muted">Pourcentage prélevé sur chaque livraison effectuée</small>
+            </div>
+            
+            <div class="mb-3">
+                <label for="service_commission" class="form-label">Commission sur services (%)</label>
+                <input type="number" step="0.1" class="form-control" id="service_commission" name="service_commission" value="15">
+                <small class="text-muted">Pourcentage prélevé sur chaque service effectué</small>
+            </div>
+            
+            <button type="submit" class="btn btn-primary mt-3">Enregistrer les modifications</button>
+        </form>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        Périodes de facturation
+    </div>
+    <div class="card-body">
+        <form method="post" action="{% url 'dashboard:parametres_tarifaires' %}">
+            {% csrf_token %}
+            <input type="hidden" name="form_type" value="billing_periods">
+            
+            <div class="mb-3">
+                <label for="payment_due_days" class="form-label">Délai de paiement des factures (jours)</label>
+                <input type="number" class="form-control" id="payment_due_days" name="payment_due_days" value="30">
+            </div>
+            
+            <div class="mb-3">
+                <label for="invoice_generation_day" class="form-label">Jour du mois pour la génération des factures</label>
+                <input type="number" min="1" max="28" class="form-control" id="invoice_generation_day" name="invoice_generation_day" value="1">
+                <small class="text-muted">Pour les prestataires et commerçants en contrat mensuel</small>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

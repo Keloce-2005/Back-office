@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}Détails Livreur - {{ livreur.user.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <h1>Profil Livreur</h1>
+        <a href="{% url 'dashboard:validation_livreurs' %}" class="btn btn-secondary">
+            <i class="fa fa-arrow-left"></i> Retour à la liste
+        </a>
+    </div>
+</div>
+
+{% if messages %}
+<div class="messages-container">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h2>Informations personnelles</h2>
+            </div>
+            <div class="card-body">
+                <div class="profile-header">
+                    <div class="profile-img">
+                        <div class="profile-initial">{{ livreur.user.first_name|first }}{{ livreur.user.last_name|first }}</div>
+                    </div>
+                    <div class="profile-status">
+                        <span class="badge 
+                            {% if livreur.statut == 'valide' %}bg-success
+                            {% elif livreur.statut == 'rejete' %}bg-danger
+                            {% else %}bg-warning{% endif %}">
+                            {{ livreur.get_statut_display }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="info-list">
+                    <div class="info-item">
+                        <div class="info-label">Nom complet</div>
+                        <div class="info-value">{{ livreur.user.get_full_name }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Email</div>
+                        <div class="info-value">{{ livreur.user.email }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Téléphone</div>
+                        <div class="info-value">{{ livreur.telephone }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Adresse</div>
+                        <div class="info-value">{{ livreur.adresse }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Date d'inscription</div>
+                        <div class="info-value">{{ livreur.date_inscription|date:"d/m/Y H:i" }}</div>
+                    </div>
+                </div>
+
+                {% if livreur.statut == 'en_attente' and livreur.a_tous_documents_valides %}
+                <form method="post" action="{% url 'dashboard:valider_livreur' livreur.id %}" class="mt-4">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success btn-block">
+                        <i class="fa fa-check-circle"></i> Valider ce livreur
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if livreur.notes_admin %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h2>Notes administratives</h2>
+            </div>
+            <div class="card-body">
+                <pre class="admin-notes">{{ livreur.notes_admin }}</pre>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h2>Documents justificatifs</h2>
+            </div>
+            <div class="card-body p-0">
+                <div class="documents-list">
+                    {% for doc_item in documents_display %}
+                    <div class="document-card {% if doc_item.fourni %}document-provided{% else %}document-missing{% endif %}">
+                        <div class="document-header">
+                            <h3>{{ doc_item.nom }}</h3>
+                            {% if doc_item.fourni %}
+                                <span class="badge 
+                                    {% if doc_item.document.statut == 'valide' %}bg-success
+                                    {% elif doc_item.document.statut == 'rejete' %}bg-danger
+                                    {% else %}bg-warning{% endif %}">
+                                    {{ doc_item.document.get_statut_display }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">Non fourni</span>
+                            {% endif %}
+                        </div>
+
+                        {% if doc_item.fourni %}
+                        <div class="document-details">
+                            <div class="document-info">
+                                <div class="info-row">
+                                    <div class="info-label">Date d'upload</div>
+                                    <div class="info-value">{{ doc_item.document.date_upload|date:"d/m/Y H:i" }}</div>
+                                </div>
+                                {% if doc_item.document.date_validation %}
+                                <div class="info-row">
+                                    <div class="info-label">Date de validation</div>
+                                    <div class="info-value">{{ doc_item.document.date_validation|date:"d/m/Y H:i" }}</div>
+                                </div>
+                                {% endif %}
+                                {% if doc_item.document.commentaire %}
+                                <div class="info-row">
+                                    <div class="info-label">Commentaire</div>
+                                    <div class="info-value">{{ doc_item.document.commentaire }}</div>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="document-preview">
+                                {% if doc_item.document.fichier.url|lower|slice:"-4:" == ".pdf" %}
+                                <a href="{{ doc_item.document.fichier.url }}" target="_blank" class="btn btn-sm btn-primary">
+                                    <i class="fa fa-file-pdf"></i> Voir le PDF
+                                </a>
+                                {% else %}
+                                <a href="{{ doc_item.document.fichier.url }}" data-fancybox class="preview-link">
+                                    <img src="{{ doc_item.document.fichier.url }}" alt="{{ doc_item.nom }}" class="preview-thumbnail">
+                                </a>
+                                {% endif %}
+                            </div>
+
+                            {% if doc_item.document.statut == 'en_attente' %}
+                            <div class="document-actions">
+                                <form method="post" action="{% url 'dashboard:valider_document' doc_item.document.id %}" class="action-form">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fa fa-check"></i> Valider
+                                    </button>
+                                </form>
+
+                                <button type="button" class="btn btn-danger" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#rejectModal{{ doc_item.document.id }}">
+                                    <i class="fa fa-times"></i> Rejeter
+                                </button>
+
+                                <div class="modal fade" id="rejectModal{{ doc_item.document.id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Rejeter le document</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <form method="post" action="{% url 'dashboard:rejeter_document' doc_item.document.id %}">
+                                                {% csrf_token %}
+                                                <div class="modal-body">
+                                                    <div class="mb-3">
+                                                        <label for="raison{{ doc_item.document.id }}" class="form-label">Motif du rejet</label>
+                                                        <textarea class="form-control" name="raison" id="raison{{ doc_item.document.id }}" rows="3" required></textarea>
+                                                        <div class="form-text">Cette information sera visible par le livreur.</div>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                    <button type="submit" class="btn btn-danger">Confirmer le rejet</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div class="document-missing-message p-3 text-center text-muted">
+                            <i class="fa fa-exclamation-triangle fa-2x mb-2"></i>
+                            <p>Ce document n'a pas encore été fourni par le livreur.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@4.0/dist/fancybox.umd.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        Fancybox.bind("[data-fancybox]", {});
+    });
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@4.0/dist/fancybox.css" />
+<style>
+    .profile-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .profile-img {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background-color: var(--primary-color, #007bff);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+    }
+
+    .profile-initial {
+        color: white;
+        font-size: 32px;
+        font-weight: bold;
+    }
+
+    .info-list { margin-bottom: 20px; }
+
+    .info-item {
+        margin-bottom: 10px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+    }
+
+    .info-label {
+        font-weight: bold;
+        color: #666;
+        font-size: 12px;
+    }
+
+    .info-value {
+        font-size: 16px;
+    }
+
+    .admin-notes {
+        background: #f9f9f9;
+        padding: 15px;
+        border-radius: 5px;
+        white-space: pre-wrap;
+        font-family: inherit;
+        font-size: 14px;
+        color: #555;
+    }
+
+    .documents-list {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        padding: 20px;
+    }
+
+    .document-card {
+        border: 1px solid #eee;
+        border-radius: 5px;
+        overflow: hidden;
+    }
+
+    .document-header {
+        padding: 15px;
+        background: #f5f5f5;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .document-details {
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .preview-thumbnail {
+        max-width: 100%;
+        height: auto;
+        border-radius: 4px;
+    }
+
+    .document-actions {
+        display: flex;
+        gap: 10px;
+    }
+</style>
+{% endblock %}

@@ -3,12 +3,34 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Sum, Avg
 from django.utils import timezone
 from django.contrib import messages
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAdminUser
+from rest_framework.response import Response
 
-from .models import (
+from dashboard.models import (
     User, Livreur, Commercant, Prestataire, Annonce, Livraison, 
     Paiement, Facture, Service, Entrepot, BoxStockage, Abonnement,
-    Notification, Evaluation, PieceJustificative, Contrat, LogConnexion
+    Notification, Evaluation, PieceJustificative, Contrat, LogConnexion,
+    DemandeValidationLivreur
 )
+
+# Fonction utilitaire pour obtenir le chiffre d'affaires mensuel
+def get_monthly_revenue(year=None, month=None):
+    """Calcule le chiffre d'affaires pour un mois donné."""
+    if year is None or month is None:
+        # Utiliser le mois et l'année actuels par défaut
+        now = timezone.now()
+        year = now.year
+        month = now.month
+    
+    # Calculer les revenus pour le mois spécifié
+    revenue = Paiement.objects.filter(
+        status='reussi',
+        date_paiement__year=year,
+        date_paiement__month=month
+    ).aggregate(Sum('montant'))['montant__sum'] or 0
+    
+    return revenue
 
 @login_required
 def home(request):
@@ -515,3 +537,378 @@ def logs(request):
         'active_menu': 'logs',
         'logs': logs_list
     })
+
+# Endpoint API pour obtenir le chiffre d'affaires mensuel
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def monthly_revenue(request):
+    """Endpoint pour obtenir le chiffre d'affaires mensuel."""
+    year = request.query_params.get('year')
+    month = request.query_params.get('month')
+    
+    if year and month:
+        revenue = get_monthly_revenue(int(year), int(month))
+    else:
+        revenue = get_monthly_revenue()
+    
+    return Response({'revenue': revenue})
+
+@login_required
+def validation_livreurs(request):
+    """Liste des demandes de validation en attente pour les livreurs."""
+    # Vérifier que l'utilisateur est un administrateur
+    if not request.user.is_superuser:
+        messages.error(request, "Vous n'êtes pas autorisé à accéder à cette page.")
+        return redirect('dashboard:home')
+    
+    # Récupérer les demandes de validation par statut
+    demandes_en_attente = DemandeValidationLivreur.objects.filter(status='en_attente')
+    demandes_en_examen = DemandeValidationLivreur.objects.filter(status='en_examen')
+    demandes_validees = DemandeValidationLivreur.objects.filter(status='validee')
+    demandes_refusees = DemandeValidationLivreur.objects.filter(status='refusee')
+    
+    # Statistiques des demandes
+    stats = {
+        'total_demandes': DemandeValidationLivreur.objects.count(),
+        'en_attente': demandes_en_attente.count(),
+        'en_examen': demandes_en_examen.count(),
+        'validees': demandes_validees.count(),
+        'refusees': demandes_refusees.count(),
+    }
+    
+    return render(request, 'dashboard/validation_livreurs.html', {
+        'active_menu': 'validation_livreurs',
+        'demandes_en_attente': demandes_en_attente,
+        'demandes_en_examen': demandes_en_examen,
+        'demandes_validees': demandes_validees,
+        'demandes_refusees': demandes_refusees,
+        'stats': stats
+    })
+
+@login_required
+def validation_livreur_detail(request, demande_id):
+    """Détail d'une demande de validation de livreur avec possibilité de traitement."""
+    # Vérifier que l'utilisateur est un administrateur
+    if request.user.user_type != 'admin':
+        messages.error(request, "Vous n'êtes pas autorisé à accéder à cette page.")
+        return redirect('dashboard:home')
+    
+    demande = get_object_or_404(DemandeValidationLivreur, pk=demande_id)
+    
+    # Récupérer le profil livreur associé à la demande
+    try:
+        livreur = Livreur.objects.get(user=demande.user)
+    except Livreur.DoesNotExist:
+        livreur = None
+    
+    # Récupérer les pièces justificatives
+    pieces = PieceJustificative.objects.filter(user=demande.user)
+    
+    # Préparer les documents pour l'affichage
+    document_types = {
+        'id_card': "Carte d'identité",
+        'driving_license': "Permis de conduire",
+        # Ajoutez d'autres types si nécessaire
+    }
+    
+    documents_display = []
+    for doc_type, doc_name in document_types.items():
+        # Vérifier si la pièce existe
+        piece = pieces.filter(type_piece=doc_type).first()
+        
+        documents_display.append({
+            'nom': doc_name,
+            'fourni': piece is not None,
+            'document': piece
+        })
+    
+    # Ajouter des logs pour le débogage
+    print(f"Demande ID: {demande_id}, Livreur: {demande.user.username}")
+    print(f"Pièces trouvées: {pieces.count()}")
+    for piece in pieces:
+        print(f"  - Type: {piece.type_piece}, Fichier: {piece.fichier}")
+    print(f"Documents display: {documents_display}")
+    
+    return render(request, 'dashboard/validation_livreur_detail.html', {
+        'active_menu': 'validation_livreurs',
+        'demande': demande,
+        'livreur': livreur,
+        'pieces': pieces,
+        'documents_display': documents_display
+    })
+
+@login_required
+def soumettre_pieces_justificatives(request):
+    """Vue permettant à un livreur de soumettre ses pièces justificatives."""
+    # Vérifier si l'utilisateur est bien un livreur
+    if request.user.user_type != 'livreur':
+        messages.error(request, "Vous n'êtes pas autorisé à accéder à cette page.")
+        return redirect('dashboard:home')
+    
+    # Récupérer ou créer une demande de validation
+    demande, created = DemandeValidationLivreur.objects.get_or_create(
+        user=request.user,
+        defaults={'status': 'en_attente'}
+    )
+    
+    # Si une demande a déjà été validée, afficher un message
+    if demande.status == 'validee':
+        messages.info(request, "Votre compte a déjà été validé.")
+        return redirect('dashboard:home')
+    
+    # Récupérer les pièces déjà soumises
+    pieces_soumises = PieceJustificative.objects.filter(
+        user=request.user,
+        demande_validation=demande
+    )
+    
+    # Liste des types de pièces justificatives obligatoires
+    pieces_obligatoires = {
+        'id_card': 'Carte d\'identité',
+        'driving_license': 'Permis de conduire'
+    }
+    
+    # Vérifier quelles pièces ont déjà été soumises
+    pieces_manquantes = {}
+    for type_piece, nom in pieces_obligatoires.items():
+        if not pieces_soumises.filter(type_piece=type_piece).exists():
+            pieces_manquantes[type_piece] = nom
+    
+    if request.method == 'POST':
+        type_piece = request.POST.get('type_piece')
+        fichier = request.FILES.get('fichier')
+        
+        if not fichier:
+            messages.error(request, "Veuillez sélectionner un fichier à télécharger.")
+        elif not type_piece:
+            messages.error(request, "Veuillez sélectionner le type de document.")
+        else:
+            # Vérifier si ce type de pièce existe déjà
+            if pieces_soumises.filter(type_piece=type_piece).exists():
+                messages.warning(request, f"Vous avez déjà soumis ce type de document. Il sera remplacé.")
+                # Supprimer l'ancienne pièce
+                pieces_soumises.filter(type_piece=type_piece).delete()
+            
+            # Créer la nouvelle pièce justificative
+            piece = PieceJustificative.objects.create(
+                user=request.user,
+                type_piece=type_piece,
+                fichier=fichier,
+                demande_validation=demande
+            )
+            
+            messages.success(request, f"Votre {piece.get_type_piece_display()} a été soumis avec succès.")
+            return redirect('dashboard:soumettre_pieces_justificatives')
+    
+    return render(request, 'dashboard/soumettre_pieces.html', {
+        'active_menu': 'validation',
+        'demande': demande,
+        'pieces_soumises': pieces_soumises,
+        'pieces_manquantes': pieces_manquantes
+    })
+@login_required
+def changer_statut_livreur(request):
+    """Change le statut d'une demande de validation de livreur."""
+    # Vérifier que l'utilisateur est un administrateur
+    if request.user.user_type != 'admin' and not request.user.is_superuser:
+        messages.error(request, "Vous n'êtes pas autorisé à effectuer cette action.")
+        return redirect('dashboard:home')
+    
+    if request.method == 'POST':
+        livreur_id = request.POST.get('livreur_id')  # Le nom du champ dans le formulaire
+        nouveau_statut = request.POST.get('nouveau_statut')
+        
+        # Récupérer la demande
+        try:
+            demande = DemandeValidationLivreur.objects.get(id=livreur_id)
+            
+            # Changer le statut selon la demande
+            if nouveau_statut == 'en_examen':
+                demande.en_examen(request.user)
+                messages.info(request, f"La demande de {demande.user.username} a été mise en examen.")
+            elif nouveau_statut == 'valide':
+                demande.valider(request.user)
+                messages.success(request, f"La demande de {demande.user.username} a été validée avec succès.")
+            
+            return redirect('dashboard:validation_livreurs')
+        except DemandeValidationLivreur.DoesNotExist:
+            messages.error(request, "Demande non trouvée.")
+            return redirect('dashboard:validation_livreurs')
+    
+    return redirect('dashboard:validation_livreurs')
+
+@login_required
+def refuser_livreur(request):
+    """Refuse une demande de validation de livreur."""
+    # Vérifier que l'utilisateur est un administrateur
+    if request.user.user_type != 'admin' and not request.user.is_superuser:
+        messages.error(request, "Vous n'êtes pas autorisé à effectuer cette action.")
+        return redirect('dashboard:home')
+    
+    if request.method == 'POST':
+        livreur_id = request.POST.get('livreur_id')
+        motif = request.POST.get('motif')
+        
+        if not motif:
+            messages.error(request, "Veuillez fournir un motif de refus.")
+            return redirect('dashboard:validation_livreur_detail', demande_id=livreur_id)
+        
+        try:
+            demande = DemandeValidationLivreur.objects.get(id=livreur_id)
+            demande.refuser(request.user, motif)
+            messages.warning(request, f"La demande de {demande.user.username} a été refusée.")
+            return redirect('dashboard:validation_livreurs')
+        except DemandeValidationLivreur.DoesNotExist:
+            messages.error(request, "Demande non trouvée.")
+            return redirect('dashboard:validation_livreurs')
+    
+    return redirect('dashboard:validation_livreurs')
+
+@login_required
+def valider_document(request, document_id):
+    """Valide un document justificatif."""
+    # Vérifier que l'utilisateur est un administrateur
+    if request.user.user_type != 'admin' and not request.user.is_superuser:
+        messages.error(request, "Vous n'êtes pas autorisé à effectuer cette action.")
+        return redirect('dashboard:home')
+    
+    if request.method == 'POST':
+        try:
+            document = PieceJustificative.objects.get(id=document_id)
+            commentaire = request.POST.get('commentaire', '')
+            document.valider(request.user, commentaire)
+            messages.success(request, f"Le document {document.get_type_piece_display()} a été validé avec succès.")
+            
+            # Rediriger vers le détail du livreur associé à ce document
+            demande = document.demande_validation
+            if demande:
+                return redirect('dashboard:validation_livreur_detail', demande_id=demande.id)
+            else:
+                return redirect('dashboard:validation_livreurs')
+        except PieceJustificative.DoesNotExist:
+            messages.error(request, "Document non trouvé.")
+            return redirect('dashboard:validation_livreurs')
+    
+    return redirect('dashboard:validation_livreurs')
+@login_required
+def profil(request):
+    """Affiche et gère le profil de l'utilisateur."""
+    return render(request, 'dashboard/profil.html')
+
+@login_required
+def parametres(request):
+    """Affiche et gère les paramètres du compte utilisateur."""
+    return render(request, 'dashboard/parametres.html')
+@login_required
+def parametres_generaux(request):
+    """Affiche et gère les paramètres généraux de l'application."""
+    if request.method == 'POST':
+        # Traiter les paramètres ici
+        messages.success(request, 'Les paramètres généraux ont été mis à jour avec succès.')
+        return redirect('dashboard:parametres_generaux')
+    
+    return render(request, 'dashboard/parametres_generaux.html', {'active_menu': 'parametres_generaux'})
+
+@login_required
+def parametres_tarifaires(request):
+    """Affiche et gère les paramètres tarifaires de l'application."""
+    if request.method == 'POST':
+        # Traiter les paramètres ici
+        messages.success(request, 'Les paramètres tarifaires ont été mis à jour avec succès.')
+        return redirect('dashboard:parametres_tarifaires')
+    
+    return render(request, 'dashboard/parametres_tarifaires.html', {'active_menu': 'parametres_tarifaires'})
+
+@login_required
+def utilisateurs_admin(request):
+    """Gestion des utilisateurs administrateurs."""
+    # Récupérer tous les utilisateurs administrateurs
+    admins = User.objects.filter(user_type='admin')
+    
+    if request.method == 'POST':
+        # Traiter les actions sur les utilisateurs administrateurs
+        # Par exemple, ajouter un nouvel administrateur
+        messages.success(request, 'Les modifications ont été enregistrées avec succès.')
+        return redirect('dashboard:utilisateurs_admin')
+    
+    return render(request, 'dashboard/utilisateurs_admin.html', {
+        'active_menu': 'utilisateurs_admin',
+        'admins': admins
+    })
+@login_required
+def recherche_clients(request):
+    """Recherche des clients selon les critères fournis."""
+    nom = request.GET.get('nom', '')
+    statut = request.GET.get('statut', '')
+    abonnement = request.GET.get('abonnement', '')
+    
+    # Démarrer avec tous les clients
+    clients_query = User.objects.filter(user_type='client')
+    
+    # Appliquer les filtres si fournis
+    if nom:
+        clients_query = clients_query.filter(
+            Q(first_name__icontains=nom) | 
+            Q(last_name__icontains=nom) | 
+            Q(email__icontains=nom)
+        )
+    
+    if statut == 'actif':
+        clients_query = clients_query.filter(is_active=True)
+    elif statut == 'inactif':
+        clients_query = clients_query.filter(is_active=False)
+    
+    if abonnement:
+        clients_query = clients_query.filter(abonnement__type_abonnement=abonnement, abonnement__actif=True)
+    
+    # Statistiques des clients filtrés
+    stats = {
+        'total_clients': clients_query.count(),
+        'clients_avec_abonnement': Abonnement.objects.filter(
+            user__in=clients_query, actif=True
+        ).exclude(type_abonnement='free').count(),
+    }
+    
+    return render(request, 'dashboard/clients.html', {
+        'active_menu': 'clients',
+        'clients': clients_query,
+        'stats': stats,
+        'search_params': {
+            'nom': nom,
+            'statut': statut,
+            'abonnement': abonnement
+        }
+    })
+@login_required
+def rejeter_document(request, document_id):
+    """Rejette un document justificatif."""
+    # Vérifier que l'utilisateur est un administrateur
+    if request.user.user_type != 'admin' and not request.user.is_superuser:
+        messages.error(request, "Vous n'êtes pas autorisé à effectuer cette action.")
+        return redirect('dashboard:home')
+    
+    if request.method == 'POST':
+        try:
+            document = PieceJustificative.objects.get(id=document_id)
+            raison = request.POST.get('raison', '')
+            
+            # La méthode valider n'existe pas pour rejeter, donc nous utilisons une approche manuelle
+            document.validee = False
+            document.commentaire_validation = raison
+            document.date_validation = timezone.now()
+            document.validee_par = request.user
+            document.save()
+            
+            messages.warning(request, f"Le document {document.get_type_piece_display()} a été rejeté.")
+            
+            # Rediriger vers le détail du livreur associé à ce document
+            demande = document.demande_validation
+            if demande:
+                return redirect('dashboard:validation_livreur_detail', demande_id=demande.id)
+            else:
+                return redirect('dashboard:validation_livreurs')
+        except PieceJustificative.DoesNotExist:
+            messages.error(request, "Document non trouvé.")
+            return redirect('dashboard:validation_livreurs')
+    
+    return redirect('dashboard:validation_livreurs')

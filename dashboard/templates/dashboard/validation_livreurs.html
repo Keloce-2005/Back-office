@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+
+{% block title %}Validation des livreurs{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Validation des livreurs</h1>
+    
+    <!-- Statistiques -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total demandes</h5>
+                    <p class="card-text fs-4">{{ stats.total_demandes }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">En attente</h5>
+                    <p class="card-text fs-4">{{ stats.en_attente }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">En examen</h5>
+                    <p class="card-text fs-4">{{ stats.en_examen }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Validées</h5>
+                    <p class="card-text fs-4">{{ stats.validees }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Liste des demandes en attente -->
+    <h2 class="mb-3">Demandes en attente</h2>
+    {% if demandes_en_attente %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Livreur</th>
+                    <th>Date de demande</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for demande in demandes_en_attente %}
+                <tr>
+                    <td>{{ demande.user.username }}</td>
+                    <td>{{ demande.date_demande }}</td>
+                    <td><span class="badge bg-warning">{{ demande.get_status_display }}</span></td>
+                    <td>
+                      <a href="{% url 'dashboard:validation_livreur_detail' demande.id %}" class="btn btn-sm btn-primary">Voir détails</a>
+                        
+                        <!-- Bouton pour mettre en examen -->
+                        <form method="post" action="{% url 'dashboard:changer_statut_livreur' %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="livreur_id" value="{{ demande.id }}">
+                            <input type="hidden" name="nouveau_statut" value="en_examen">
+                            <button type="submit" class="btn btn-sm btn-info">En examen</button>
+                        </form>
+                        
+                        <!-- Bouton pour valider -->
+                        <form method="post" action="{% url 'dashboard:changer_statut_livreur' %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="livreur_id" value="{{ demande.id }}">
+                            <input type="hidden" name="nouveau_statut" value="valide">
+                            <button type="submit" class="btn btn-sm btn-success">Valider</button>
+                        </form>
+                        
+                        <!-- Bouton pour refuser - ouvre un modal -->
+                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#refuserModal{{ demande.id }}">
+                            Refuser
+                        </button>
+                        
+                        <!-- Modal pour le refus avec motif -->
+                        <div class="modal fade" id="refuserModal{{ demande.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Refuser la demande</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <form method="post" action="{% url 'dashboard:refuser_livreur' %}">
+                                        {% csrf_token %}
+                                        <div class="modal-body">
+                                            <input type="hidden" name="livreur_id" value="{{ demande.id }}">
+                                            <div class="mb-3">
+                                                <label for="motif" class="form-label">Motif du refus</label>
+                                                <textarea class="form-control" name="motif" id="motif" rows="3" required></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                            <button type="submit" class="btn btn-danger">Confirmer le refus</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p>Aucune demande en attente.</p>
+    {% endif %}
+    
+    <!-- Section pour les demandes en examen -->
+    <h2 class="mb-3 mt-5">Demandes en examen</h2>
+    {% if demandes_en_examen %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Livreur</th>
+                    <th>Date de demande</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for demande in demandes_en_examen %}
+                <tr>
+                    <td>{{ demande.user.username }}</td>
+                    <td>{{ demande.date_demande }}</td>
+                    <td><span class="badge bg-info">{{ demande.get_status_display }}</span></td>
+                    <td>
+                        
+                        <a href="{% url 'dashboard:validation_livreur_detail' demande.id %}" class="btn btn-sm btn-primary">Voir détails</a>
+                        
+                        <!-- Bouton pour valider -->
+                        <form method="post" action="{% url 'dashboard:changer_statut_livreur' %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="livreur_id" value="{{ demande.id }}">
+                            <input type="hidden" name="nouveau_statut" value="valide">
+                            <button type="submit" class="btn btn-sm btn-success">Valider</button>
+                        </form>
+                        
+                        <!-- Bouton pour refuser -->
+                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#refuserModalExamen{{ demande.id }}">
+                            Refuser
+                        </button>
+                        
+                        <!-- Modal pour le refus avec motif -->
+                        <div class="modal fade" id="refuserModalExamen{{ demande.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Refuser la demande</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <form method="post" action="{% url 'dashboard:refuser_livreur' %}">
+                                        {% csrf_token %}
+                                        <div class="modal-body">
+                                            <input type="hidden" name="livreur_id" value="{{ demande.id }}">
+                                            <div class="mb-3">
+                                                <label for="motif" class="form-label">Motif du refus</label>
+                                                <textarea class="form-control" name="motif" id="motif" rows="3" required></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                            <button type="submit" class="btn btn-danger">Confirmer le refus</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p>Aucune demande en examen.</p>
+    {% endif %}
+</div>
+{% endblock %}

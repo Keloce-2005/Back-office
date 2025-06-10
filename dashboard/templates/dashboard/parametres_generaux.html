@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Paramètres généraux - EcoDeli{% endblock %}
+
+{% block content %}
+<div class="page-title">
+    <h1>Paramètres généraux</h1>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        Configuration générale
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            
+            <!-- Nom de l'entreprise -->
+            <div class="mb-3">
+                <label for="company_name" class="form-label">Nom de l'entreprise</label>
+                <input type="text" class="form-control" id="company_name" name="company_name" value="EcoDeli">
+            </div>
+            
+            <!-- Email de contact -->
+            <div class="mb-3">
+                <label for="contact_email" class="form-label">Email de contact</label>
+                <input type="email" class="form-control" id="contact_email" name="contact_email" value="contact@ecodeli.fr">
+            </div>
+            
+            <!-- Téléphone de contact -->
+            <div class="mb-3">
+                <label for="contact_phone" class="form-label">Téléphone de contact</label>
+                <input type="text" class="form-control" id="contact_phone" name="contact_phone" value="+33 1 23 45 67 89">
+            </div>
+            
+            <!-- Adresse -->
+            <div class="mb-3">
+                <label for="address" class="form-label">Adresse</label>
+                <textarea class="form-control" id="address" name="address" rows="3">110, rue de Flandre, 75019 Paris</textarea>
+            </div>
+            
+            <!-- Paramètres de notification -->
+            <h5 class="mt-4">Paramètres de notification</h5>
+            
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="notify_new_user" name="notify_new_user" checked>
+                <label class="form-check-label" for="notify_new_user">Notifier lors de l'inscription d'un nouvel utilisateur</label>
+            </div>
+            
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="notify_new_delivery" name="notify_new_delivery" checked>
+                <label class="form-check-label" for="notify_new_delivery">Notifier lors d'une nouvelle demande de livraison</label>
+            </div>
+            
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="notify_payment" name="notify_payment" checked>
+                <label class="form-check-label" for="notify_payment">Notifier lors d'un nouveau paiement</label>
+            </div>
+            
+            <button type="submit" class="btn btn-primary mt-3">Enregistrer les modifications</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

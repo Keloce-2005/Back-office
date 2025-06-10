@@ -1,770 +1,157 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EcoDeli - Administration</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
-        
-        body {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-        
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: black;
-            color: white;
-            padding: 10px 20px;
-            height: 60px;
-        }
-        
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-            font-style: italic;
-        }
-        
-        .logout-btn {
-            background-color: #00a99d;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-        }
-        
-        .logout-btn:hover {
-            background-color: #008c7e;
-        }
-        
-        .main-container {
-            display: flex;
-            flex: 1;
-        }
-        
-        .sidebar {
-            width: 200px;
-            background-color: #000;
-            color: white;
-            flex-shrink: 0;
-        }
-        
-        .menu-title {
-            padding: 15px;
-            background-color: #000;
-            font-weight: bold;
-            border-bottom: 1px solid #333;
-        }
-        
-        .menu-link {
-            text-decoration: none;
-            color: white;
-            display: block;
-        }
-        
-        .menu-item {
-            padding: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        
-        .menu-item:hover {
-            background-color: #333;
-        }
-        
-        .menu-item.active {
-            background-color: #222;
-        }
-        
-        .menu-item i {
-            width: 20px;
-            text-align: center;
-        }
-        
-        .content {
-            flex: 1;
-            padding: 20px;
-            background-color: white;
-            overflow-y: auto;
-        }
-        
-        .footer {
-            background-color: black;
-            color: white;
-            padding: 10px;
-            font-size: 12px;
-            text-align: center;
-        }
-        
-        .footer a {
-            color: white;
-            text-decoration: none;
-            margin: 0 5px;
-        }
-        
-        .footer a:hover {
-            text-decoration: underline;
-        }
+{% extends 'base.html' %}
+{% block title %}Tableau de Bord EcoDeli{% endblock %}
 
-        /* Styles pour le tableau de bord */
-        .card {
-            border: 1px solid #e3e6f0;
-            border-radius: 0.35rem;
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-            margin-bottom: 20px;
-        }
-        
-        .card-header {
-            background-color: #f8f9fc;
-            border-bottom: 1px solid #e3e6f0;
-            padding: 0.75rem 1.25rem;
-            font-weight: bold;
-            color: #4e73df;
-        }
-        
-        .card-body {
-            padding: 1.25rem;
-        }
-        
-        .row {
-            display: flex;
-            flex-wrap: wrap;
-            margin-right: -0.75rem;
-            margin-left: -0.75rem;
-        }
-        
-        .col-xl-3, .col-md-6, .col-lg-6, .col-xl-8, .col-xl-4, .col-lg-7, .col-lg-5 {
-            position: relative;
-            width: 100%;
-            padding-right: 0.75rem;
-            padding-left: 0.75rem;
-        }
-        
-        .col-xl-3 {
-            flex: 0 0 25%;
-            max-width: 25%;
-        }
-        
-        .col-md-6 {
-            flex: 0 0 50%;
-            max-width: 50%;
-        }
-        
-        .col-lg-6 {
-            flex: 0 0 50%;
-            max-width: 50%;
-        }
-        
-        .col-lg-7 {
-            flex: 0 0 58.333333%;
-            max-width: 58.333333%;
-        }
-        
-        .col-lg-5 {
-            flex: 0 0 41.666667%;
-            max-width: 41.666667%;
-        }
-        
-        .col-xl-8 {
-            flex: 0 0 66.666667%;
-            max-width: 66.666667%;
-        }
-        
-        .col-xl-4 {
-            flex: 0 0 33.333333%;
-            max-width: 33.333333%;
-        }
-        
-        .mb-4 {
-            margin-bottom: 1.5rem;
-        }
-        
-        .mt-4 {
-            margin-top: 1.5rem;
-        }
-        
-        .h5 {
-            font-size: 1.25rem;
-            font-weight: bold;
-        }
-        
-        .text-xs {
-            font-size: 0.7rem;
-        }
-        
-        .font-weight-bold {
-            font-weight: bold;
-        }
-        
-        .text-primary {
-            color: #4e73df;
-        }
-        
-        .text-success {
-            color: #1cc88a;
-        }
-        
-        .text-info {
-            color: #36b9cc;
-        }
-        
-        .text-warning {
-            color: #f6c23e;
-        }
-        
-        .text-uppercase {
-            text-transform: uppercase;
-        }
-        
-        .text-gray-800 {
-            color: #5a5c69;
-        }
-        
-        .border-left-primary {
-            border-left: 0.25rem solid #4e73df;
-        }
-        
-        .border-left-success {
-            border-left: 0.25rem solid #1cc88a;
-        }
-        
-        .border-left-info {
-            border-left: 0.25rem solid #36b9cc;
-        }
-        
-        .border-left-warning {
-            border-left: 0.25rem solid #f6c23e;
-        }
-        
-        .shadow {
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-        }
-        
-        .py-2 {
-            padding-top: 0.5rem;
-            padding-bottom: 0.5rem;
-        }
-        
-        .py-3 {
-            padding-top: 1rem;
-            padding-bottom: 1rem;
-        }
-        
-        .no-gutters {
-            margin-right: 0;
-            margin-left: 0;
-        }
-        
-        .align-items-center {
-            align-items: center !important;
-        }
-        
-        .justify-content-between {
-            justify-content: space-between !important;
-        }
-        
-        .mr-2 {
-            margin-right: 0.5rem;
-        }
-        
-        .mb-1 {
-            margin-bottom: 0.25rem;
-        }
-        
-        .mb-0 {
-            margin-bottom: 0;
-        }
-        
-        .fa-2x {
-            font-size: 2em;
-        }
-        
-        .text-gray-300 {
-            color: #dddfeb;
-        }
-        
-        /* Table styles */
-        .table {
-            width: 100%;
-            margin-bottom: 1rem;
-            color: #858796;
-            border-collapse: collapse;
-        }
-        
-        .table th, .table td {
-            padding: 0.75rem;
-            vertical-align: top;
-            border-top: 1px solid #e3e6f0;
-        }
-        
-        .table thead th {
-            vertical-align: bottom;
-            border-bottom: 2px solid #e3e6f0;
-            background-color: #f8f9fc;
-        }
-        
-        .table-bordered {
-            border: 1px solid #e3e6f0;
-        }
-        
-        .table-bordered th, .table-bordered td {
-            border: 1px solid #e3e6f0;
-        }
-        
-        .badge {
-            display: inline-block;
-            padding: 0.25em 0.4em;
-            font-size: 75%;
-            font-weight: 700;
-            line-height: 1;
-            text-align: center;
-            white-space: nowrap;
-            vertical-align: baseline;
-            border-radius: 0.25rem;
-            color: white;
-        }
-        
-        .bg-success {
-            background-color: #1cc88a;
-        }
-        
-        .bg-warning {
-            background-color: #f6c23e;
-        }
-        
-        .bg-info {
-            background-color: #36b9cc;
-        }
-        
-        .bg-danger {
-            background-color: #e74a3b;
-        }
-        
-        .alert {
-            position: relative;
-            padding: 0.75rem 1.25rem;
-            margin-bottom: 1rem;
-            border: 1px solid transparent;
-            border-radius: 0.35rem;
-        }
-        
-        .alert-danger {
-            color: #721c24;
-            background-color: #f8d7da;
-            border-color: #f5c6cb;
-        }
-        
-        .alert-warning {
-            color: #856404;
-            background-color: #fff3cd;
-            border-color: #ffeeba;
-        }
-        
-        .alert-info {
-            color: #0c5460;
-            background-color: #d1ecf1;
-            border-color: #bee5eb;
-        }
-        
-        .alert-success {
-            color: #155724;
-            background-color: #d4edda;
-            border-color: #c3e6cb;
-        }
-        
-        .chart-area, .chart-pie {
-            position: relative;
-            height: 20rem;
-            width: 100%;
-        }
-        
-        /* Media queries for responsiveness */
-        @media (max-width: 1200px) {
-            .col-xl-3, .col-xl-4, .col-xl-8 {
-                flex: 0 0 100%;
-                max-width: 100%;
-            }
-        }
-        
-        @media (max-width: 992px) {
-            .col-lg-6, .col-lg-7, .col-lg-5 {
-                flex: 0 0 100%;
-                max-width: 100%;
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 100px;
-            }
-            
-            .menu-item span {
-                display: none;
-            }
-            
-            .menu-item i {
-                font-size: 1.2rem;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <div class="logo">EcoDeli</div>
-        <a href="#" class="logout-btn">Se déconnecter</a>
-    </div>
-    
-    <div class="main-container">
-        <div class="sidebar">
-            <div class="menu-title">TABLEAU DE BORD</div>
-            
-            <a href="{% url 'dashboard:home' %}" class="menu-link">
-                <div class="menu-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
-                    <i class="fas fa-home"></i>
-                    <span>Accueil</span>
-                </div>
-            </a>
-            
-            <a href="{% url 'dashboard:livreurs' %}" class="menu-link">
-                <div class="menu-item {% if request.resolver_match.url_name == 'livreurs' %}active{% endif %}">
-                    <i class="fas fa-truck"></i>
-                    <span>Livreurs</span>
-                </div>
-            </a>
-            
-            <a href="{% url 'dashboard:commercants' %}" class="menu-link">
-                <div class="menu-item {% if request.resolver_match.url_name == 'commercants' %}active{% endif %}">
-                    <i class="fas fa-store"></i>
-                    <span>Commerçants</span>
-                </div>
-            </a>
-            
-            <a href="{% url 'dashboard:clients' %}" class="menu-link">
-                <div class="menu-item {% if request.resolver_match.url_name == 'clients' %}active{% endif %}">
-                    <i class="fas fa-users"></i>
-                    <span>Clients</span>
-                </div>
-            </a>
-            
-            <a href="{% url 'dashboard:prestataires' %}" class="menu-link">
-                <div class="menu-item {% if request.resolver_match.url_name == 'prestataires' %}active{% endif %}">
-                    <i class="fas fa-briefcase"></i>
-                    <span>Prestataires</span>
-                </div>
-            </a>
-            
-            <a href="{% url 'dashboard:notifications' %}" class="menu-link">
-                <div class="menu-item {% if request.resolver_match.url_name == 'notifications' %}active{% endif %}">
-                    <i class="fas fa-bell"></i>
-                    <span>Notifications</span>
-                </div>
-            </a>
-            
-            <a href="{% url 'dashboard:paiements' %}" class="menu-link">
-                <div class="menu-item {% if request.resolver_match.url_name == 'paiements' %}active{% endif %}">
-                    <i class="fas fa-credit-card"></i>
-                    <span>Paiements</span>
-                </div>
-            </a>
-
-            <a href="{% url 'dashboard:facturation' %}" class="menu-link">
-                <div class="menu-item {% if request.resolver_match.url_name == 'facturation' %}active{% endif %}">
-                    <i class="fas fa-file-invoice"></i>
-                    <span>Facturation</span>
-                </div>
-            </a>
-            
-            <a href="{% url 'dashboard:statistiques' %}" class="menu-link">
-                <div class="menu-item {% if request.resolver_match.url_name == 'statistiques' %}active{% endif %}">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>Statistiques</span>
-                </div>
-            </a>
-            
-            <a href="{% url 'dashboard:parametres' %}" class="menu-link">
-                <div class="menu-item {% if request.resolver_match.url_name == 'parametres' %}active{% endif %}">
-                    <i class="fas fa-cog"></i>
-                    <span>Paramètres</span>
-                </div>
-            </a>
-            
-            <a href="{% url 'dashboard:support' %}" class="menu-link">
-                <div class="menu-item {% if request.resolver_match.url_name == 'support' %}active{% endif %}">
-                    <i class="fas fa-question-circle"></i>
-                    <span>Support / Aide</span>
-                </div>
-            </a>
+{% block content %}
+<div class="container-fluid">
+  <h2 class="mb-4">Vue d'ensemble</h2>
+  
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card bg-primary text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="card-title mb-0">Total Livreurs</h6>
+              <h2 class="mt-2 mb-0">{{ stats.total_livreurs }}</h2>
+            </div>
+            <i class="fas fa-truck fa-2x"></i>
+          </div>
         </div>
-        
-        <div class="content">
-            <!-- Contenu du tableau de bord -->
-            <h1 class="mt-4 mb-4">Tableau de Bord</h1>
-            
-            <div class="row">
-                <!-- Statistiques rapides -->
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-primary shadow h-100 py-2">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                        Colis en transit</div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">128</div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-box-open fa-2x text-gray-300"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-success shadow h-100 py-2">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                        Chiffre d'affaires (Mensuel)</div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">34 592€</div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-euro-sign fa-2x text-gray-300"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-info shadow h-100 py-2">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                        Livreurs actifs</div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">245</div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-user-friends fa-2x text-gray-300"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-warning shadow h-100 py-2">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                        Nouvelles inscriptions</div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">18</div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-user-plus fa-2x text-gray-300"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+      </div>
+    </div>
+    
+    <div class="col-md-3">
+      <div class="card bg-success text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="card-title mb-0">Total Clients</h6>
+              <h2 class="mt-2 mb-0">{{ stats.total_clients }}</h2>
             </div>
-
-            <div class="row">
-                <!-- Graphique des livraisons -->
-                <div class="col-xl-8 col-lg-7">
-                    <div class="card shadow mb-4">
-                        <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Évolution des livraisons</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="chart-area">
-                                <canvas id="livraisons-chart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Distribution des services -->
-                <div class="col-xl-4 col-lg-5">
-                    <div class="card shadow mb-4">
-                        <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Répartition des services</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="chart-pie">
-                                <canvas id="services-chart"></canvas>
-                            </div>
-                            <div class="mt-4 text-center">
-                                <span class="mr-2"><i class="fas fa-circle text-primary"></i> Livraisons</span>
-                                <span class="mr-2"><i class="fas fa-circle text-success"></i> Transport</span>
-                                <span class="mr-2"><i class="fas fa-circle text-info"></i> Services</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <!-- Dernières livraisons -->
-                <div class="col-lg-6 mb-4">
-                    <div class="card shadow mb-4">
-                        <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Dernières livraisons</h6>
-                        </div>
-                        <div class="card-body">
-                            <table class="table table-bordered">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Client</th>
-                                        <th>Destination</th>
-                                        <th>Statut</th>
-                                        <th>Date</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>#L-3425</td>
-                                        <td>Martin Dupont</td>
-                                        <td>Paris</td>
-                                        <td><span class="badge bg-success">Livrée</span></td>
-                                        <td>21/03/2025</td>
-                                    </tr>
-                                    <tr>
-                                        <td>#L-3424</td>
-                                        <td>Sophie Martin</td>
-                                        <td>Lyon</td>
-                                        <td><span class="badge bg-warning">En cours</span></td>
-                                        <td>21/03/2025</td>
-                                    </tr>
-                                    <tr>
-                                        <td>#L-3423</td>
-                                        <td>Jean Dujardin</td>
-                                        <td>Marseille</td>
-                                        <td><span class="badge bg-info">En attente</span></td>
-                                        <td>20/03/2025</td>
-                                    </tr>
-                                    <tr>
-                                        <td>#L-3422</td>
-                                        <td>Marie Leroy</td>
-                                        <td>Lille</td>
-                                        <td><span class="badge bg-success">Livrée</span></td>
-                                        <td>20/03/2025</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Alertes et Notifications -->
-                <div class="col-lg-6 mb-4">
-                    <div class="card shadow mb-4">
-                        <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Alertes récentes</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="alert alert-danger">
-                                <strong>Retard de livraison:</strong> Le colis #L2528 a dépassé le délai de livraison prévu.
-                            </div>
-                            <div class="alert alert-warning">
-                                <strong>Livreur en attente:</strong> 3 livreurs attendent validation de leurs documents.
-                            </div>
-                            <div class="alert alert-info">
-                                <strong>Nouveaux clients:</strong> 5 nouveaux clients se sont inscrits aujourd'hui.
-                            </div>
-                            <div class="alert alert-success">
-                                <strong>Objectif atteint:</strong> L'objectif de 100 livraisons hebdomadaires a été dépassé.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <i class="fas fa-users fa-2x"></i>
+          </div>
         </div>
+      </div>
     </div>
     
-    <div class="footer">
-        &copy; 2025 EcoDeli, tous droits réservés. | 
-        <a href="#">Mentions légales</a> | 
-        <a href="#">Conditions d'utilisation</a> | 
-        <a href="#">Politique de confidentialité</a> | 
-        <a href="#">Support technique</a>
+    <div class="col-md-3">
+      <div class="card bg-warning text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="card-title mb-0">Livraisons en cours</h6>
+              <h2 class="mt-2 mb-0">{{ stats.livraisons_en_cours }}</h2>
+            </div>
+            <i class="fas fa-shipping-fast fa-2x"></i>
+          </div>
+        </div>
+      </div>
     </div>
     
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        // Graphique d'évolution des livraisons
-        const livraisons = document.getElementById('livraisons-chart');
-        if (livraisons) {
-            new Chart(livraisons, {
-                type: 'line',
-                data: {
-                    labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sept', 'Oct', 'Nov', 'Déc'],
-                    datasets: [{
-                        label: 'Nombre de livraisons',
-                        data: [650, 800, 950, 1100, 1250, 1380, 1450, 1520, 1650, 1780, 1900, 2050],
-                        borderColor: '#4e73df',
-                        backgroundColor: 'rgba(78, 115, 223, 0.05)',
-                        pointBackgroundColor: '#4e73df',
-                        tension: 0.3
-                    }]
-                },
-                options: {
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: false
-                        }
-                    }
-                }
-            });
-        }
-
-        // Graphique de répartition des services
-        const services = document.getElementById('services-chart');
-        if (services) {
-            new Chart(services, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Livraisons', 'Transport de personnes', 'Services à domicile'],
-                    datasets: [{
-                        data: [65, 20, 15],
-                        backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc'],
-                        hoverBackgroundColor: ['#2e59d9', '#17a673', '#2c9faf'],
-                        hoverBorderColor: "rgba(234, 236, 244, 1)",
-                    }]
-                },
-                options: {
-                    maintainAspectRatio: false,
-                    cutout: '70%',
-                }
-            });
-        }
-    </script>
-</body>
-</html>
+    <div class="col-md-3">
+      <div class="card bg-info text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="card-title mb-0">Chiffre d'affaires</h6>
+              <h2 class="mt-2 mb-0">{{ stats.chiffre_affaires_mois }} €</h2>
+            </div>
+            <i class="fas fa-euro-sign fa-2x"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <h5>Activité récente</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Description</th>
+                  <th>Date</th>
+                  <th>Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for activite in activites_recentes %}
+                <tr>
+                  <td>{{ activite.type }}</td>
+                  <td>{{ activite.description }}</td>
+                  <td>{{ activite.date }}</td>
+                  <td>
+                    {% if activite.statut == 'Complété' %}
+                    <span class="badge bg-success">{{ activite.statut }}</span>
+                    {% elif activite.statut == 'En cours' %}
+                    <span class="badge bg-warning">{{ activite.statut }}</span>
+                    {% else %}
+                    <span class="badge bg-danger">{{ activite.statut }}</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="4" class="text-center">Aucune activité récente</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header">
+          <h5>Demandes en attente</h5>
+        </div>
+        <div class="card-body">
+          <ul class="list-group list-group-flush">
+            {% if demandes_attente %}
+              {% for demande in demandes_attente %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ demande.type }} - {{ demande.nom }}
+                <span class="badge bg-primary rounded-pill">{{ demande.date }}</span>
+              </li>
+              {% endfor %}
+            {% else %}
+              <li class="list-group-item">Aucune demande en attente</li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+      
+      <div class="card mt-4">
+        <div class="card-header">
+          <h5>Notifications</h5>
+        </div>
+        <div class="card-body p-0">
+          <ul class="list-group list-group-flush">
+            {% if notifications %}
+              {% for notif in notifications %}
+              <li class="list-group-item">
+                <div class="d-flex w-100 justify-content-between">
+                  <h6 class="mb-1">{{ notif.titre }}</h6>
+                  <small>{{ notif.date }}</small>
+                </div>
+                <p class="mb-1">{{ notif.message }}</p>
+              </li>
+              {% endfor %}
+            {% else %}
+              <li class="list-group-item">Aucune notification</li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

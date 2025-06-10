@@ -1,0 +1,141 @@
+/* Couleurs principales */
+:root {
+    --primary-color: #2CC973;
+    --secondary-color: #2CC973;
+    --dark-color: #212529;
+    --light-color: #f8f9fa;
+}
+
+/* Bannière principale */
+.hero-banner {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 80px 0;
+    margin-bottom: 0;
+}
+
+.hero-banner h1 {
+    font-weight: 700;
+    font-size: 2.5rem;
+}
+
+.hero-image {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Avantages */
+.advantages {
+    background-color: white;
+    padding: 60px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.advantage-item {
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.advantage-item i {
+    color: var(--primary-color);
+    margin-bottom: 15px;
+}
+
+.advantage-item h3 {
+    font-size: 1.4rem;
+    margin-bottom: 15px;
+}
+
+/* Services */
+.services {
+    padding: 80px 0;
+    background-color: #f8f9fa;
+}
+
+.services h2 {
+    margin-bottom: 40px;
+    color: #333;
+}
+
+.service-card {
+    background: white;
+    border-radius: 10px;
+    padding: 30px 20px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    height: 100%;
+    transition: transform 0.3s;
+}
+
+.service-card:hover {
+    transform: translateY(-10px);
+}
+
+.service-icon {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 20px;
+}
+
+.service-card h3 {
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+    color: var(--primary-color);
+}
+
+.service-card p {
+    margin-bottom: 20px;
+    color: #6c757d;
+}
+
+/* CTA Contreportage */
+.counterparting-cta {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 60px 0;
+}
+
+/* Processus */
+.process {
+    padding: 80px 0;
+    background-color: white;
+}
+
+.process-step {
+    margin-bottom: 30px;
+    padding: 20px;
+    border-radius: 5px;
+    background-color: #f8f9fa;
+}
+
+.process-step h3 {
+    color: var(--primary-color);
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+}
+
+.validation {
+    text-align: center;
+}
+
+.validation-icon {
+    width: 100px;
+    height: 100px;
+    margin-top: 20px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .hero-banner {
+        text-align: center;
+        padding: 40px 0;
+    }
+    
+    .hero-image {
+        margin-top: 30px;
+    }
+    
+    .service-card {
+        margin-bottom: 30px;
+    }
+}
